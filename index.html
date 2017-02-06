@@ -1,0 +1,275 @@
+<head>
+    <script src="https://use.fontawesome.com/1be2411c64.js"></script>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            margin: auto;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            padding-left: 10px;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: row;
+            /*width: 180px;*/
+            margin: auto;
+            }
+        .col {
+            flex: 1;
+            height: 60px;
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+            line-height: 60px;
+            -user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            /*border: 1px solid black;*/
+            margin: 10px;
+            height: 100px;
+            width: 100px;
+        }
+        .leftborder {
+            border-left: 1px solid black;
+        }
+        .rightborder {
+            border-right: 1px solid black;
+        }
+        .topborder {
+            border-top: 1px solid black;
+        }
+        .bottomborder {
+            border-bottom: 1px solid black;
+        }
+        #c0 {
+            background-color: #F47C7C;
+        }
+        #c1 {
+            background-color: #F7F48B;
+        }
+        #c2 {
+            background-color: #A1DE93;
+        }
+        #c3 {
+            background-color: #70A1D7;
+        }
+        #score {
+            text-align: center;
+            padding-top: 100px;
+            font-family: Arial, sans-serif;
+            -user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            letter-spacing: 4px;
+            font-size: 40px;
+        }
+        #play {
+            text-align: center;
+            padding-top: 175px;
+            font-family: Arial, sans-serif;
+            -user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            /*letter-spacing: 4px;*/
+            font-size: 20px;
+        }
+        #strictMode {
+            text-align: left;
+            font-family: Arial, sans-serif;
+            -user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            position: fixed;
+            top: 10;
+            left: 10;
+            width: 100%;
+            letter-spacing: 4px;
+            font-size: 15px;
+        }
+
+
+
+    </style>
+
+    <script>
+    
+    var buttons = [0,1,2,3];
+    var sequence = [];
+    var inputed = [];
+    var state = "off";
+    var strictMode = "off";
+    
+    Array.prototype.random = function () {
+        return this[Math.floor((Math.random()*this.length))];
+        }
+
+    function adds() {
+        sequence.push(buttons.random().toString());
+    }
+
+    function playSequence() {
+        let factor = 0;
+        for (let s of sequence) {
+            setTimeout(function() {console.log(s); playButton("c" + s)}, 1000 * factor);
+            factor+=1;
+        }
+    }
+
+    function playButton(b) {
+        let bid = b[1];
+        let sound = "simonSound"+bid+".mp3";
+        let audio = new Audio(sound);
+        audio.play();
+        let oldcolor = rgb2hex(window.getComputedStyle(document.getElementById(b)).getPropertyValue("background-color"));
+        document.getElementById(b).style.backgroundColor = ColorLuminance(oldcolor, .3);
+        setTimeout(function(){
+            document.getElementById(b).style.backgroundColor = oldcolor;
+        }, 100);
+    }
+
+    function userInput(b) {
+        playButton(b);
+        inputed.push(b[1]);
+        console.log(sequence, inputed);
+        if (inputed.length == sequence.length) {
+            if (check()) {
+                console.log('correct!');
+                adds();
+                document.getElementById("score").innerHTML=sequence.length;
+                if (sequence.length >= 20) {
+                     document.getElementById("score").innerHTML= "You Won!";
+                }
+                else {setTimeout(playSequence, 2000);}
+            } else {
+                console.log('incorrect');
+                document.getElementById("score").innerHTML="Wrong!";
+                if (strictMode == "on") {
+                    setTimeout(pressRestart, 1000);
+                    setTimeout(playSequence, 2000);
+                } else {
+                setTimeout(function(){
+                    document.getElementById("score").innerHTML=sequence.length;
+                }, 1000);
+                setTimeout(playSequence, 2000);
+                }
+            }
+        }
+    }
+
+    function check() {
+        if (arraysEqual(sequence, inputed)) {
+            inputed = [];
+            return true;
+        } else {
+            console.log("wrong!")
+            return false;
+        }
+    }
+
+    function pressPlay() {
+        if (state=="off") {
+            console.log("play!")
+            document.getElementById("play").innerHTML = "<i class='fa fa-refresh' aria-hidden='true'>";
+            state = "on";
+            playSequence();
+        } else {
+            document.getElementById("play").innerHTML = "&#x25b6;";
+            pressRestart();
+            state = "off";
+        }
+    }
+
+    function pressRestart() {
+        sequence = [];
+        inputed = [];
+        adds();
+        document.getElementById("score").innerHTML=sequence.length;
+    }
+    function pressMode() {
+        if (strictMode == "off") {
+            document.getElementById("strictMode").innerHTML = "strict mode: on";
+            strictMode = "on";
+        } else {
+            document.getElementById("strictMode").innerHTML = "strict mode: off";
+            strictMode = "off";
+        }
+    }
+
+    function ColorLuminance(hex, lum) {
+            //https://www.sitepoint.com/javascript-generate-lighter-darker-color/
+
+        // validate hex string
+        hex = String(hex).replace(/[^0-9a-f]/gi, '');
+        if (hex.length < 6) {
+            hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+        }
+        lum = lum || 0;
+
+        // convert to decimal and change luminosity
+        var rgb = "#", c, i;
+        for (i = 0; i < 3; i++) {
+            c = parseInt(hex.substr(i*2,2), 16);
+            c = Math.round(Math.min(Math.max(0, c + (c * lum)), 255)).toString(16);
+            rgb += ("00"+c).substr(c.length);
+        }
+
+        return rgb;
+}
+
+    function rgb2hex(rgb) {
+            //http://stackoverflow.com/questions/1740700/how-to-get-hex-color-value-rather-than-rgb-value
+        rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        function hex(x) {
+            return ("0" + parseInt(x).toString(16)).slice(-2);
+        }
+        return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+    }
+
+    function arraysEqual(a, b) {
+                //http://stackoverflow.com/questions/3115982/how-to-check-if-two-arrays-are-equal-with-javascript
+        if (a === b) return true;
+        if (a == null || b == null) return false;
+        if (a.length != b.length) return false;
+
+        // If you don't care about the order of the elements inside
+        // the array, you should sort both arrays here.
+
+        for (var i = 0; i < a.length; ++i) {
+            if (a[i] !== b[i]) return false;
+        }
+        return true;
+}
+
+    adds();
+
+    </script>
+    
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col" id="c0" onclick=userInput(this.id)></div>
+            <div class="col" id="c1" onclick=userInput(this.id)></div>
+        </div>
+        <div class="row">
+            <div class="col" id="c2" onclick=userInput(this.id)></div>
+            <div class="col" id="c3" onclick=userInput(this.id)></div>
+        </div>
+    </div>
+    <div id="score">1</div>
+    <div id="play" onclick="pressPlay()">&#x25b6;</div>
+    <div id="strictMode" onclick="pressMode()">strict mode: off</div>
+    
+</body>
